@@ -1,160 +1,83 @@
-diff --git a/dist/auth/getAccessResults.d.ts b/dist/auth/getAccessResults.d.ts
-index e4ade0321cbf5b028cad93d0dca6de372609918a..94b4468f1d392ccd9cc7491c32944581c584f069 100644
---- a/dist/auth/getAccessResults.d.ts
-+++ b/dist/auth/getAccessResults.d.ts
-@@ -1,8 +1,10 @@
- import type { PayloadRequest } from '../types/index.js';
--import type { SanitizedPermissions } from './types.js';
-+import type { Permissions, SanitizedPermissions } from './types.js';
- type GetAccessResultsArgs = {
-     req: PayloadRequest;
- };
-+/** Repro patch: the unsanitized result, built afresh on every call. @internal */
-+export declare function collectAccessResults({ req, }: GetAccessResultsArgs): Promise<Permissions>;
- export declare function getAccessResults({ req, }: GetAccessResultsArgs): Promise<SanitizedPermissions>;
- export {};
- //# sourceMappingURL=getAccessResults.d.ts.map
-\ No newline at end of file
 diff --git a/dist/auth/getAccessResults.js b/dist/auth/getAccessResults.js
-index edcdc233a071c7aec68df5a1b4314807ef6c0160..adf170577a5f922c344e60e58e841c51565d5fb6 100644
+index edcdc233a071c7aec68df5a1b4314807ef6c0160..793bd171e937459e0a56df487948ac9438a37f9e 100644
 --- a/dist/auth/getAccessResults.js
 +++ b/dist/auth/getAccessResults.js
-@@ -1,6 +1,10 @@
+@@ -1,5 +1,8 @@
  import { getEntityPermissions } from '../utilities/getEntityPermissions/getEntityPermissions.js';
--import { sanitizePermissions } from '../utilities/sanitizePermissions.js';
--export async function getAccessResults({ req }) {
-+import { sanitizeOwnedPermissions } from '../utilities/sanitizePermissions.js';
-+/**
-+ * Repro patch: the unsanitized result, built afresh on every call.
-+ *
-+ * @internal
-+ */ export async function collectAccessResults({ req }) {
+ import { sanitizePermissions } from '../utilities/sanitizePermissions.js';
++// Repro patch (see the comment at the top of utilities/sanitizePermissions.js): `access.admin`'s answer is
++// stored as a copy.
++import { deepCopyObject } from '../utilities/deepCopyObject.js';
+ export async function getAccessResults({ req }) {
      const results = {
          collections: {},
-         globals: {}
-@@ -57,7 +61,15 @@ export async function getAccessResults({ req }) {
-         });
-         results.globals[global.slug] = globalPermissions;
-     }));
--    return sanitizePermissions(results);
-+    return results;
-+}
-+/**
-+ * Repro patch: the result above is new on every call and nobody else holds it, so it is
-+ * sanitized where it is instead of being copied whole first (`sanitizeOwnedPermissions`).
-+ */ export async function getAccessResults({ req }) {
-+    return sanitizeOwnedPermissions(await collectAccessResults({
-+        req
-+    }));
- }
- 
- //# sourceMappingURL=getAccessResults.js.map
-\ No newline at end of file
-diff --git a/dist/exports/internal.d.ts b/dist/exports/internal.d.ts
-index a6c72dae308e617701e5b1747e743b758767873a..90124aeca8e01426c094e5bea1a5c8b0f8001ea2 100644
---- a/dist/exports/internal.d.ts
-+++ b/dist/exports/internal.d.ts
-@@ -15,5 +15,6 @@ export { getSafeFileName } from '../uploads/getSafeFilename.js';
- export { parseRangeHeader } from '../uploads/parseRangeHeader.js';
- export { UPLOAD_CONTENT_SECURITY_POLICY } from '../uploads/uploadContentSecurityPolicy.js';
- export { getEntityPermissions } from '../utilities/getEntityPermissions/getEntityPermissions.js';
--export { sanitizePermissions } from '../utilities/sanitizePermissions.js';
-+export { sanitizeOwnedPermissions, sanitizePermissions } from '../utilities/sanitizePermissions.js';
-+export { collectAccessResults } from '../auth/getAccessResults.js';
- //# sourceMappingURL=internal.d.ts.map
-\ No newline at end of file
-diff --git a/dist/exports/internal.js b/dist/exports/internal.js
-index 174cd0e06661d84ba9db63674f0b0a04883d681e..17c974ec51a178f2a30b1a083d8c4c818e77bfc0 100644
---- a/dist/exports/internal.js
-+++ b/dist/exports/internal.js
-@@ -12,6 +12,7 @@ export { getSafeFileName } from '../uploads/getSafeFilename.js';
- export { parseRangeHeader } from '../uploads/parseRangeHeader.js';
- export { UPLOAD_CONTENT_SECURITY_POLICY } from '../uploads/uploadContentSecurityPolicy.js';
- export { getEntityPermissions } from '../utilities/getEntityPermissions/getEntityPermissions.js';
--export { sanitizePermissions } from '../utilities/sanitizePermissions.js';
-+export { sanitizeOwnedPermissions, sanitizePermissions } from '../utilities/sanitizePermissions.js';
-+export { collectAccessResults } from '../auth/getAccessResults.js';
- 
- //# sourceMappingURL=internal.js.map
-\ No newline at end of file
-diff --git a/dist/utilities/sanitizePermissions.d.ts b/dist/utilities/sanitizePermissions.d.ts
-index 3576420571ecd02fe4b47c2fae9601f1a9e492ae..0d26aac7de67eff30244a7528b1a012686e0d3cd 100644
---- a/dist/utilities/sanitizePermissions.d.ts
-+++ b/dist/utilities/sanitizePermissions.d.ts
-@@ -11,4 +11,6 @@ export declare function recursivelySanitizeGlobals(obj: Permissions['globals']):
-  * @internal
-  */
- export declare function sanitizePermissions(permissions: MarkOptional<Permissions, 'canAccessAdmin'>): SanitizedPermissions;
-+/** Repro patch: sanitizes a tree its caller owns in place, copying only its `where` results. @internal */
-+export declare function sanitizeOwnedPermissions(permissions: MarkOptional<Permissions, 'canAccessAdmin'>): SanitizedPermissions;
- //# sourceMappingURL=sanitizePermissions.d.ts.map
-\ No newline at end of file
+@@ -9,9 +12,9 @@ export async function getAccessResults({ req }) {
+     const isLoggedIn = !!user;
+     const userCollectionConfig = user && user.collection ? payload?.collections?.[user.collection]?.config : null;
+     if (userCollectionConfig && payload.config.admin.user === user?.collection) {
+-        results.canAccessAdmin = userCollectionConfig.access.admin ? await userCollectionConfig.access.admin({
++        results.canAccessAdmin = userCollectionConfig.access.admin ? deepCopyObject(await userCollectionConfig.access.admin({
+             req
+-        }) : isLoggedIn;
++        })) : isLoggedIn;
+     } else {
+         results.canAccessAdmin = false;
+     }
+diff --git a/dist/utilities/getEntityPermissions/getEntityPermissions.js b/dist/utilities/getEntityPermissions/getEntityPermissions.js
+index 422a11e6d7832fd549ef2a685f12a127c1da42b3..b765476d680fa1e52f43f6813c86bcb3ecd0857d 100644
+--- a/dist/utilities/getEntityPermissions/getEntityPermissions.js
++++ b/dist/utilities/getEntityPermissions/getEntityPermissions.js
+@@ -1,4 +1,7 @@
+ import { isDeepStrictEqual } from 'util';
++// Repro patch (see the comment at the top of ../sanitizePermissions.js): an access function's `where` is
++// stored as a copy.
++import { deepCopyObject } from '../deepCopyObject.js';
+ import { entityDocExists } from './entityDocExists.js';
+ import { populateFieldPermissions } from './populateFieldPermissions.js';
+ const topLevelCollectionPermissions = [
+@@ -181,7 +184,7 @@ const processWhereQuery = ({ id, slug, accessResult, entityPermissions, entityTy
+         wherePromises.push(cached.result.then((hasPermission)=>{
+             entityPermissions[operation] = {
+                 permission: hasPermission,
+-                where: accessResult
++                where: deepCopyObject(accessResult)
+             };
+         }));
+     } else {
+@@ -191,7 +194,7 @@ const processWhereQuery = ({ id, slug, accessResult, entityPermissions, entityTy
+         // Even after calling sanitizePermissions, the permissions will still be true if the where query is returned but ignored as we don't have the document data available.
+         entityPermissions[operation] = {
+             permission: true,
+-            where: accessResult
++            where: deepCopyObject(accessResult)
+         };
+     }
+ };
 diff --git a/dist/utilities/sanitizePermissions.js b/dist/utilities/sanitizePermissions.js
-index bbaa654a4390a99d81dc3a12ed3b8988467b762f..852ad845238742c65ec1ce2f45cda2f99dcf48f0 100644
+index bbaa654a4390a99d81dc3a12ed3b8988467b762f..bccb2d13dc511742551e22115c6671b94a071845 100644
 --- a/dist/utilities/sanitizePermissions.js
 +++ b/dist/utilities/sanitizePermissions.js
-@@ -184,12 +184,8 @@ export function recursivelySanitizeGlobals(obj) {
-     }
- }
- /**
-- * Recursively remove empty objects and false values from an object.
-- *
-- * @internal
+@@ -1,4 +1,11 @@
+-import { deepCopyObject } from './deepCopyObject.js';
++// Repro patch. `sanitizePermissions` sanitizes in place, as Payload's main (4.0) does since 45e833fe: the
++// same fix as 21bdbbf3 on 3.x, without its whole deep copy. Each occurrence of a reused block already has
++// its own permissions object (21bdbbf3: no cache across entities, a copy per occurrence). Results returned
++// by access functions are stored as copies, so sanitizing in place never edits an object the application
++// handed over. The copies are made where those results enter the tree: getEntityPermissions' `where` and
++// getAccessResults' `canAccessAdmin`. The whole copy costs milliseconds a call on a large config, and an
++// admin page calls getAccessResults three times.
++// Remove this patch when Payload drops the copy.
+ // A period cannot occur in a schema field name. Retain this false value through
+ // sanitization, then remove it after cleanup so a repeated block keeps `fields: {}`.
+ const recursiveBlockBoundaryKey = '\u0000payload.recursive-block-boundary';
+@@ -187,9 +194,7 @@ export function recursivelySanitizeGlobals(obj) {
+  * Recursively remove empty objects and false values from an object.
+  *
+  * @internal
 - */ export function sanitizePermissions(permissions) {
 -    // Each occurrence must be sanitized independently, including shared block references.
 -    const data = deepCopyObject(permissions);
-+ * The sanitizing itself, done on the object it is given.
-+ */ function sanitizeInPlace(data) {
++ */ export function sanitizePermissions(data) {
      if (data.canAccessAdmin === false) {
          delete data.canAccessAdmin;
      }
-@@ -210,5 +206,49 @@ export function recursivelySanitizeGlobals(obj) {
-     }
-     return data;
- }
-+/**
-+ * Recursively remove empty objects and false values from an object.
-+ *
-+ * @internal
-+ */ export function sanitizePermissions(permissions) {
-+    // Each occurrence must be sanitized independently, including shared block references.
-+    return sanitizeInPlace(deepCopyObject(permissions));
-+}
-+/**
-+ * Repro patch. The same sanitizing for a tree that its
-+ * caller built on this call and keeps nothing of (`getAccessResults`), without copying the whole tree
-+ * first: the whole copy costs milliseconds a call on a large config, and an admin page calls this three
-+ * times. Every object of such a tree is new on this call and none is reached twice
-+ * (`populateFieldPermissions` already copies a reused block's permissions per occurrence), so it is
-+ * sanitized where it is. The access functions' `where` results are copied first, so the objects that
-+ * access functions returned are left untouched. They occur only on an entity's own
-+ * operations (field and block permissions inherit booleans).
-+ *
-+ * @internal
-+ */ export function sanitizeOwnedPermissions(permissions) {
-+    for (const entities of [
-+        permissions.collections,
-+        permissions.globals
-+    ]){
-+        if (!entities || typeof entities !== 'object') {
-+            continue;
-+        }
-+        for (const entity of Object.values(entities)){
-+            if (!entity || typeof entity !== 'object') {
-+                continue;
-+            }
-+            for (const operation of Object.keys(entity)){
-+                const value = entity[operation];
-+                if (operation !== 'fields' && value && typeof value === 'object' && 'where' in value) {
-+                    entity[operation] = {
-+                        ...value,
-+                        where: deepCopyObject(value.where)
-+                    };
-+                }
-+            }
-+        }
-+    }
-+    return sanitizeInPlace(permissions);
-+}
- 
- //# sourceMappingURL=sanitizePermissions.js.map

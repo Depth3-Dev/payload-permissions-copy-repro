@@ -5,7 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 patchedDependencies:
-  payload@3.94.1: 2347411b34aaaf48b80485ce4c9a9d40f3c3a6c8c4afa04f9de47f8a595eafef
+  payload@3.94.1: 02686877e4e2fc92f33f49d8d9d2f800db936beaef785aa5a97b18ee59b323df
 
 importers:
 
@@ -13,10 +13,10 @@ importers:
     dependencies:
       '@payloadcms/db-sqlite':
         specifier: 3.94.1
-        version: 3.94.1(payload@3.94.1(patch_hash=2347411b34aaaf48b80485ce4c9a9d40f3c3a6c8c4afa04f9de47f8a595eafef)(graphql@16.15.0))
+        version: 3.94.1(payload@3.94.1(patch_hash=02686877e4e2fc92f33f49d8d9d2f800db936beaef785aa5a97b18ee59b323df)(graphql@16.15.0))
       payload:
         specifier: 3.94.1
-        version: 3.94.1(patch_hash=2347411b34aaaf48b80485ce4c9a9d40f3c3a6c8c4afa04f9de47f8a595eafef)(graphql@16.15.0)
+        version: 3.94.1(patch_hash=02686877e4e2fc92f33f49d8d9d2f800db936beaef785aa5a97b18ee59b323df)(graphql@16.15.0)
 
 packages:
 
@@ -1391,14 +1391,14 @@ snapshots:
 
   '@next/env@15.5.29': {}
 
-  '@payloadcms/db-sqlite@3.94.1(payload@3.94.1(patch_hash=2347411b34aaaf48b80485ce4c9a9d40f3c3a6c8c4afa04f9de47f8a595eafef)(graphql@16.15.0))':
+  '@payloadcms/db-sqlite@3.94.1(payload@3.94.1(patch_hash=02686877e4e2fc92f33f49d8d9d2f800db936beaef785aa5a97b18ee59b323df)(graphql@16.15.0))':
     dependencies:
       '@libsql/client': 0.14.0
-      '@payloadcms/drizzle': 3.94.1(@libsql/client@0.14.0)(payload@3.94.1(patch_hash=2347411b34aaaf48b80485ce4c9a9d40f3c3a6c8c4afa04f9de47f8a595eafef)(graphql@16.15.0))
+      '@payloadcms/drizzle': 3.94.1(@libsql/client@0.14.0)(payload@3.94.1(patch_hash=02686877e4e2fc92f33f49d8d9d2f800db936beaef785aa5a97b18ee59b323df)(graphql@16.15.0))
       console-table-printer: 2.12.1
       drizzle-kit: 0.31.7
       drizzle-orm: 0.45.2(@libsql/client@0.14.0)
-      payload: 3.94.1(patch_hash=2347411b34aaaf48b80485ce4c9a9d40f3c3a6c8c4afa04f9de47f8a595eafef)(graphql@16.15.0)
+      payload: 3.94.1(patch_hash=02686877e4e2fc92f33f49d8d9d2f800db936beaef785aa5a97b18ee59b323df)(graphql@16.15.0)
       prompts: 2.4.2
       to-snake-case: 1.0.0
       uuid: 13.0.2
@@ -1435,12 +1435,12 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@payloadcms/drizzle@3.94.1(@libsql/client@0.14.0)(payload@3.94.1(patch_hash=2347411b34aaaf48b80485ce4c9a9d40f3c3a6c8c4afa04f9de47f8a595eafef)(graphql@16.15.0))':
+  '@payloadcms/drizzle@3.94.1(@libsql/client@0.14.0)(payload@3.94.1(patch_hash=02686877e4e2fc92f33f49d8d9d2f800db936beaef785aa5a97b18ee59b323df)(graphql@16.15.0))':
     dependencies:
       console-table-printer: 2.12.1
       dequal: 2.0.3
       drizzle-orm: 0.45.2(@libsql/client@0.14.0)
-      payload: 3.94.1(patch_hash=2347411b34aaaf48b80485ce4c9a9d40f3c3a6c8c4afa04f9de47f8a595eafef)(graphql@16.15.0)
+      payload: 3.94.1(patch_hash=02686877e4e2fc92f33f49d8d9d2f800db936beaef785aa5a97b18ee59b323df)(graphql@16.15.0)
       prompts: 2.4.2
       to-snake-case: 1.0.0
       uuid: 13.0.2
@@ -1778,7 +1778,7 @@ snapshots:
 
   path-to-regexp@6.3.0: {}
 
-  payload@3.94.1(patch_hash=2347411b34aaaf48b80485ce4c9a9d40f3c3a6c8c4afa04f9de47f8a595eafef)(graphql@16.15.0):
+  payload@3.94.1(patch_hash=02686877e4e2fc92f33f49d8d9d2f800db936beaef785aa5a97b18ee59b323df)(graphql@16.15.0):
     dependencies:
       '@next/env': 15.5.29
       '@payloadcms/translations': 3.94.1
