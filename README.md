@@ -4,9 +4,9 @@ Since v3.93.0, `sanitizePermissions` starts with `const data = deepCopyObject(pe
 `getAccessResults` hands it a tree it has just built, so every call copies the whole unsanitized
 tree before cutting it down to a far smaller result. On the same generated config, `getAccessResults`
 for an admin user takes about three times as long on 3.94.1 as on 3.92.1, and the extra time grows
-with the config (+1.1 ms, +4.4 ms, +19.5 ms for the three sizes here); taking the whole-tree copy out
-of `getAccessResults` removes almost exactly the time `deepCopyObject` alone needs, and the result is
-identical.
+with the config (+1.1 ms, +3.9 ms, +18.4 ms for the three sizes here); taking the whole-tree copy out
+of `sanitizePermissions` removes almost exactly the time `deepCopyObject` alone needs, and
+`getAccessResults` returns an identical result.
 
 ## Run it
 
@@ -63,7 +63,7 @@ which is identical in 3.92.1 and 3.94.1, using each version's own `getEntityPerm
 
 ## Measured on this machine
 
-`pnpm bench` on 2026-11-23, Apple M3 Pro, macOS (Darwin 24.6.0), Node 22.22.2. The machine was not
+`pnpm bench` on 2026-11-24, Apple M3 Pro, macOS (Darwin 24.6.0), Node 22.22.2. The machine was not
 idle during the run; the medians of 300 calls are what to compare.
 
 ```text
@@ -72,21 +72,21 @@ node v22.22.2, Apple M3 Pro, darwin 24.6.0
 
 preset        variant         config (C x B x F)      objects  distinct  JSON before     after  gAR median  gAR p95    build  deepCopy  same result
 ---------------------------------------------------------------------------------------------------------------------------------------------------
-small         3.92.1          10 x 5 x 5 inline          4117      4117      93.9 KB   22.5 KB     0.53 ms     0.66     0.32   0.88 ms          yes
-small         3.94.1          10 x 5 x 5 inline          4117      4117      93.9 KB   22.5 KB     1.61 ms     2.16     0.54   0.85 ms          yes
-small         3.94.1-patched  10 x 5 x 5 inline          4117      4117      93.9 KB   22.5 KB     0.76 ms     0.96     0.53   0.82 ms          yes
-default       3.92.1          20 x 10 x 8 inline        14957     14957     341.8 KB   78.2 KB     2.01 ms     2.34     1.19   3.35 ms          yes
-default       3.94.1          20 x 10 x 8 inline        14957     14957     341.8 KB   78.2 KB     6.41 ms     6.84     1.97   3.85 ms          yes
-default       3.94.1-patched  20 x 10 x 8 inline        14957     14957     341.8 KB   78.2 KB     2.74 ms     4.39     1.84   3.44 ms          yes
-default-refs  3.92.1          20 x 10 x 8 refs          14957      1757     341.8 KB    6.8 KB     1.31 ms     1.75     1.18   3.52 ms           NO
-default-refs  3.94.1          20 x 10 x 8 refs          14957     14957     341.8 KB   78.2 KB     5.87 ms     6.28     1.91   3.36 ms          yes
-default-refs  3.94.1-patched  20 x 10 x 8 refs          14957     14957     341.8 KB   78.2 KB     2.66 ms     3.01     1.75   3.21 ms          yes
-large         3.92.1          50 x 20 x 10 inline       69627     69627    1597.5 KB  341.8 KB     9.45 ms    12.99     5.76  16.83 ms          yes
-large         3.94.1          50 x 20 x 10 inline       69627     69627    1597.5 KB  341.8 KB    28.98 ms    32.07     8.15  16.65 ms          yes
-large         3.94.1-patched  50 x 20 x 10 inline       69627     69627    1597.5 KB  341.8 KB    11.65 ms    12.94     7.75  16.63 ms          yes
-large-refs    3.92.1          50 x 20 x 10 refs         69627      3995    1597.5 KB   14.8 KB     5.95 ms     6.53     5.65  16.75 ms           NO
-large-refs    3.94.1          50 x 20 x 10 refs         69627     69627    1597.5 KB  341.8 KB    28.66 ms    30.54     8.13  16.32 ms          yes
-large-refs    3.94.1-patched  50 x 20 x 10 refs         69627     69627    1597.5 KB  341.8 KB    11.94 ms    13.43     8.02  16.43 ms          yes
+small         3.92.1          10 x 5 x 5 inline          4117      4117      93.9 KB   22.5 KB     0.55 ms     1.05     0.32   0.82 ms          yes
+small         3.94.1          10 x 5 x 5 inline          4117      4117      93.9 KB   22.5 KB     1.59 ms     1.97     0.51   0.81 ms          yes
+small         3.94.1-patched  10 x 5 x 5 inline          4117      4117      93.9 KB   22.5 KB     0.75 ms     0.97     0.53   0.82 ms          yes
+default       3.92.1          20 x 10 x 8 inline        14957     14957     341.8 KB   78.2 KB     1.91 ms     2.16     1.18   3.30 ms          yes
+default       3.94.1          20 x 10 x 8 inline        14957     14957     341.8 KB   78.2 KB     5.82 ms     6.22     1.79   3.25 ms          yes
+default       3.94.1-patched  20 x 10 x 8 inline        14957     14957     341.8 KB   78.2 KB     2.54 ms     2.85     1.75   3.25 ms          yes
+default-refs  3.92.1          20 x 10 x 8 refs          14957      1757     341.8 KB    6.8 KB     1.30 ms     1.54     1.12   3.27 ms           NO
+default-refs  3.94.1          20 x 10 x 8 refs          14957     14957     341.8 KB   78.2 KB     5.86 ms     6.96     1.78   3.16 ms          yes
+default-refs  3.94.1-patched  20 x 10 x 8 refs          14957     14957     341.8 KB   78.2 KB     2.53 ms     2.84     1.78   3.26 ms          yes
+large         3.92.1          50 x 20 x 10 inline       69627     69627    1597.5 KB  341.8 KB     9.28 ms    12.10     5.81  15.92 ms          yes
+large         3.94.1          50 x 20 x 10 inline       69627     69627    1597.5 KB  341.8 KB    27.64 ms    31.57     7.66  16.43 ms          yes
+large         3.94.1-patched  50 x 20 x 10 inline       69627     69627    1597.5 KB  341.8 KB    12.04 ms    16.13     8.41  15.96 ms          yes
+large-refs    3.92.1          50 x 20 x 10 refs         69627      3995    1597.5 KB   14.8 KB     5.65 ms     5.99     5.50  16.09 ms           NO
+large-refs    3.94.1          50 x 20 x 10 refs         69627     69627    1597.5 KB  341.8 KB    27.39 ms    29.82     7.94  16.28 ms          yes
+large-refs    3.94.1-patched  50 x 20 x 10 refs         69627     69627    1597.5 KB  341.8 KB    11.43 ms    13.50     7.78  17.58 ms          yes
 
 objects / distinct: objects reached in getAccessResults' unsanitized result (one reached from two
   places counts twice) and how many different objects that is.
@@ -97,44 +97,44 @@ same result: the sanitized result deep-equals 3.94.1's.
 
 Checks (medians, ms)
   small
-    3.94.1 vs 3.92.1:  +1.08 (3.03x)
-    3.94.1 vs patched: +0.85   deepCopyObject of the tree alone: 0.85
-    patched vs 3.92.1: +0.23 (1.42x)   of which building the tree: +0.21
+    3.94.1 vs 3.92.1:  +1.05 (2.92x)
+    3.94.1 vs patched: +0.84   deepCopyObject of the tree alone: 0.81
+    patched vs 3.92.1: +0.21 (1.38x)   of which building the tree: +0.21
     same sanitized result: 3.92.1 yes, 3.94.1 yes, 3.94.1-patched yes
     objects reached twice: 3.92.1 0, 3.94.1 0, 3.94.1-patched 0
   default
-    3.94.1 vs 3.92.1:  +4.40 (3.19x)
-    3.94.1 vs patched: +3.66   deepCopyObject of the tree alone: 3.85
-    patched vs 3.92.1: +0.74 (1.37x)   of which building the tree: +0.66
+    3.94.1 vs 3.92.1:  +3.92 (3.05x)
+    3.94.1 vs patched: +3.29   deepCopyObject of the tree alone: 3.25
+    patched vs 3.92.1: +0.63 (1.33x)   of which building the tree: +0.57
     same sanitized result: 3.92.1 yes, 3.94.1 yes, 3.94.1-patched yes
     objects reached twice: 3.92.1 0, 3.94.1 0, 3.94.1-patched 0
   default-refs
-    3.94.1 vs 3.92.1:  +4.56 (4.48x)
-    3.94.1 vs patched: +3.21   deepCopyObject of the tree alone: 3.36
-    patched vs 3.92.1: +1.35 (2.03x)   of which building the tree: +0.56
+    3.94.1 vs 3.92.1:  +4.56 (4.50x)
+    3.94.1 vs patched: +3.33   deepCopyObject of the tree alone: 3.16
+    patched vs 3.92.1: +1.23 (1.94x)   of which building the tree: +0.67
     same sanitized result: 3.92.1 NO, 3.94.1 yes, 3.94.1-patched yes
     objects reached twice: 3.92.1 13200, 3.94.1 0, 3.94.1-patched 0
   large
-    3.94.1 vs 3.92.1:  +19.53 (3.07x)
-    3.94.1 vs patched: +17.33   deepCopyObject of the tree alone: 16.65
-    patched vs 3.92.1: +2.20 (1.23x)   of which building the tree: +1.99
+    3.94.1 vs 3.92.1:  +18.36 (2.98x)
+    3.94.1 vs patched: +15.60   deepCopyObject of the tree alone: 16.43
+    patched vs 3.92.1: +2.76 (1.30x)   of which building the tree: +2.60
     same sanitized result: 3.92.1 yes, 3.94.1 yes, 3.94.1-patched yes
     objects reached twice: 3.92.1 0, 3.94.1 0, 3.94.1-patched 0
   large-refs
-    3.94.1 vs 3.92.1:  +22.71 (4.81x)
-    3.94.1 vs patched: +16.72   deepCopyObject of the tree alone: 16.32
-    patched vs 3.92.1: +5.99 (2.01x)   of which building the tree: +2.38
+    3.94.1 vs 3.92.1:  +21.74 (4.85x)
+    3.94.1 vs patched: +15.96   deepCopyObject of the tree alone: 16.28
+    patched vs 3.92.1: +5.78 (2.02x)   of which building the tree: +2.27
     same sanitized result: 3.92.1 NO, 3.94.1 yes, 3.94.1-patched yes
     objects reached twice: 3.92.1 65632, 3.94.1 0, 3.94.1-patched 0
 ```
 
 Reading it:
 
-1. **3.94.1 is slower than 3.92.1 on the same config, and the gap grows with the config:** 3.0x to
-   3.2x with inline blocks, +1.1 ms, +4.4 ms and +19.5 ms from the small to the large preset.
+1. **3.94.1 is slower than 3.92.1 on the same config, and the gap grows with the config:** 2.9x to
+   3.1x with inline blocks, +1.1 ms, +3.9 ms and +18.4 ms from the small to the large preset.
 2. **Taking the whole-tree copy out (3.94.1-patched) removes the time of the copy and nothing
-   else:** "3.94.1 vs patched" is within about 0.7 ms of "deepCopyObject of the tree alone" in every
-   preset. What is left between patched and 3.92.1 with inline blocks (+0.2 to +2.2 ms) is almost all
+   else:** "3.94.1 vs patched" is within about 0.8 ms of "deepCopyObject of the tree alone" in every
+   preset. What is left between patched and 3.92.1 with inline blocks (+0.2 to +2.8 ms) is almost all
    in building the tree, not in sanitizing it: 3.94.1's `populateFieldPermissions` is slower than
    3.92.1's when a block repeats in one collection (the `build` column; not looked into further
    here). For the `-refs` presets 3.92.1 is not a fair baseline: it shared one permissions object
@@ -181,27 +181,35 @@ measure page renders (that needs a Next app); it measures one call.
 
 ## The proposed change
 
-`patches/payload@3.94.1.patch` (a pnpm patch of `dist`; the same change in `src` is small). It is a
-first version and will be replaced by the final patch; the table will be measured again then.
+`patches/payload@3.94.1.patch`, a pnpm patch of three files in Payload's `dist` (the same change in
+`src` is a few lines):
 
-- `sanitizePermissions` keeps its whole-tree copy for every caller that may hand it something it
-  keeps; its body moves into an in-place helper.
-- New `sanitizeOwnedPermissions` sanitizes in place a tree that its caller built on this call and
-  keeps nothing of, and leaves every object that an access function returned untouched.
-- `getAccessResults` = new `collectAccessResults` (the unsanitized tree, unchanged) followed by
-  `sanitizeOwnedPermissions`.
+- `sanitizePermissions` sanitizes in place, as it does on `main` (45e833fe): the whole-tree
+  `deepCopyObject` at its start is gone. Payload's own callers, `getAccessResults` and the two
+  `docAccess` operations, hand it a tree they have just built.
+- Results returned by access functions are stored as copies, so sanitizing in place never edits an
+  object the application handed over: `getEntityPermissions` stores `deepCopyObject(accessResult)`
+  as an operation's `where` (in both of its branches), and `getAccessResults` stores
+  `deepCopyObject(await access.admin(...))` as `canAccessAdmin`.
 
-Why not change `sanitizePermissions` itself: on 3.x it is exported from `payload/internal`, and
-21bdbbf3 added a spec, "should sanitize shared block nodes independently without changing the
-input", that hands it one entity object shared by two collections and a global and expects the
-input unchanged afterwards. That contract needs the copy, so the patch keeps it and gives the one
-caller that owns its tree, `getAccessResults`, its own path. The two `docAccess` operations
-(collections and globals) also sanitize a tree they have just built and could use the same path;
-not measured here.
+What this form gives up: on 3.x, 21bdbbf3 also added a spec, "should sanitize shared block nodes
+independently without changing the input", which hands `sanitizePermissions` one entity object
+shared by two collections and a global. Against the patched package that test fails: 11 of the 12
+tests in the package's own `dist/utilities/sanitizePermissions.spec.js` pass (all 12 on unpatched
+3.94.1; run with a small stand-in for vitest's `describe`, `it` and `expect`). The shared object is sanitized a second time on its second visit and comes back as
+`fields: true` instead of the per-field permissions the spec expects, and the argument is changed.
+The trees Payload builds itself share no object (the `distinct` column), which is why
+`getAccessResults` returns the same result as on 3.94.1 here (the `same result` column). A caller
+that hands `sanitizePermissions` shared objects still needs the copy, so upstream would choose
+between keeping a copying `sanitizePermissions` for such callers (with the in-place form used by
+Payload's own callers that build the tree) and dropping that contract and its spec, as `main` has
+neither.
 
 ## What is not claimed
 
 - Not that 3.94.1 returns a wrong result. The results are identical; the claim is about time.
+- Not that the in-place form is right for a caller that hands `sanitizePermissions` shared
+  objects (see the previous section).
 - Not that these absolute times hold elsewhere. They are from one machine, one Node version, a
   synthetic config, and an admin user; the ratios and the growth with size are the point. Users
   whose access functions return query constraints instead of `true` were not measured.
