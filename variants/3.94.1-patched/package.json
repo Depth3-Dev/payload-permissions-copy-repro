@@ -1,0 +1,9 @@
+{
+  "name": "variant-3.94.1-patched",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@payloadcms/db-sqlite": "3.94.1",
+    "payload": "3.94.1"
+  }
+}

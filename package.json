@@ -1,0 +1,16 @@
+{
+  "name": "payload-permissions-copy-repro",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Measures the whole-tree deepCopyObject in Payload 3.93+ sanitizePermissions on getAccessResults",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "postinstall": "node scripts/install-variants.mjs",
+    "bench": "node scripts/bench.mjs",
+    "bench:quick": "node scripts/bench.mjs --preset default,default-refs"
+  }
+}

@@ -1,0 +1,4 @@
+allowBuilds:
+  esbuild: false
+patchedDependencies:
+  payload@3.94.1: ../../patches/payload@3.94.1.patch
